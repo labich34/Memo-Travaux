@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mémo travaux">
+<meta name="theme-color" content="#020617">
+<title>Mémo travaux — La Côte</title>
+<style>
+  :root{
+    --bg:#020617; --card:#0f172a; --card2:#1e293b; --border:#1e293b;
+    --border2:#334155; --muted:#94a3b8; --muted2:#64748b; --text:#f1f5f9;
+    --amber:#fbbf24; --amber2:#fcd34d; --red:#dc2626;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .wrap{max-width:640px;margin:0 auto;padding:22px 16px 40px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .logo{width:36px;height:36px;border-radius:999px;background:var(--amber);box-shadow:0 6px 16px rgba(251,191,36,.25);flex:0 0 auto}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--amber);margin:0}
+  .badge-cote{padding:4px 10px;border:1px solid #b45309;color:var(--amber2);border-radius:9px;font-size:12px;font-weight:600}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin:0 -4px;padding-left:4px;padding-right:4px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;
+    font-size:14px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer}
+  .tab.active{background:var(--card2);color:var(--amber2);border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+  .dot{width:10px;height:10px;border-radius:999px;flex:0 0 auto}
+  .count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 4px;
+    border-radius:999px;font-size:12px;font-weight:700;background:#334155;color:#e2e8f0}
+  .tab.active .count{background:var(--amber);color:#020617}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+  .add{margin-top:12px;display:flex;align-items:flex-start;gap:8px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+  textarea,input[type=text]{font:inherit;color:var(--text);background:transparent;border:0;outline:none;width:100%;resize:none}
+  .ta{padding:8px 0;font-size:15px}
+  .ta::placeholder{color:var(--muted2)}
+  .duewrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:4px}
+  input[type=date]{color-scheme:dark;background:var(--card2);border:1px solid var(--border2);border-radius:6px;
+    color:#e2e8f0;font:inherit;font-size:12px;padding:4px 6px}
+  .btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;border:0;border-radius:12px;cursor:pointer;
+    font-weight:700;font-size:14px;padding:9px 14px;background:var(--amber);color:#020617}
+  .btn:active{background:var(--amber2)}
+  .btn:disabled{background:#334155;color:#64748b}
+  .iconbtn{border:0;background:transparent;color:var(--muted);padding:8px;border-radius:9px;cursor:pointer}
+  .iconbtn:active{background:var(--card2)}
+  .iconbtn.del:active{color:#f87171;background:#450a0a}
+  .list{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  .task{display:flex;align-items:flex-start;gap:12px}
+  .task p{margin:0;font-size:15px;color:#e2e8f0;white-space:pre-wrap;word-break:break-word}
+  .meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid transparent}
+  .pill.muted{color:var(--muted2);font-weight:500}
+  .pill.late{background:var(--red);color:#fff;font-weight:700}
+  .pill.due{background:var(--card2);color:#cbd5e1;border-color:var(--border2);font-weight:500}
+  .empty{text-align:center;padding:46px 0;color:var(--muted2)}
+  .empty svg{color:#34d399}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+  .stat .num{font-size:24px;font-weight:800}
+  .stat .num.red{color:#f87171}
+  .stat .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+  .sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);margin:18px 0 8px}
+  .row{width:100%;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);
+    border-radius:16px;padding:12px;text-align:left;cursor:pointer;color:inherit}
+  .row .name{font-weight:600;color:#e2e8f0;flex:1}
+  .prow{align-items:flex-start}
+  .prow.late{border-color:var(--red)}
+  .clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .foot{text-align:center;font-size:12px;color:var(--muted2);margin-top:28px}
+  .edit-ta{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:15px}
+  .edit-bar{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .save{background:var(--amber);color:#020617;font-weight:700;font-size:14px;border:0;border-radius:8px;padding:8px 12px;display:inline-flex;gap:5px;align-items:center;cursor:pointer}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo"></span>
+    <h1>Mémo travaux</h1>
+    <span class="badge-cote">La Côte</span>
+  </header>
+  <div id="app"></div>
+  <p class="foot">Vert ≤ 2 j · Orange 3–6 j · Rouge ≥ 7 j — pour repérer le retard d'un coup d'œil.</p>
+</div>
+
+<script>
+"use strict";
+var KEY="memoTravaux_v1";
+var SITES=[
+  {id:"gd",name:"Gland",dot:"#f472b6"},
+  {id:"nc",name:"Nyon Centre",dot:"#34d399"},
+  {id:"nd",name:"Nyon Drive",dot:"#fbbf24"},
+  {id:"dv",name:"Crèche",dot:"#fb923c"},
+  {id:"sg",name:"Thibaut",dot:"#60a5fa"}
+];
+var DAY=86400000;
+
+var state={tab:"dashboard",tasks:{},names:{},editingId:null};
+
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){var d=JSON.parse(raw);state.tasks=d.tasks||{};state.names=d.names||{};}
+  }catch(e){}
+  SITES.forEach(function(s){ if(!state.tasks[s.id]) state.tasks[s.id]=[]; });
+}
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify({tasks:state.tasks,names:state.names})); }catch(e){}
+}
+function siteName(s){ return state.names[s.id]||s.name; }
+function dayDiff(a,b){ return Math.floor((b-a)/DAY); }
+function fmt(ts){var d=new Date(ts);function p(n){return(n<10?"0":"")+n;}return p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear();}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+function ageInfo(days){
+  if(days<=2) return {label:days===0?"Aujourd'hui":days+" j",bg:"#063a2f",fg:"#6ee7b7",bd:"#065f46"};
+  if(days<=6) return {label:days+" j",bg:"#422006",fg:"#fcd34d",bd:"#854d0e"};
+  return {label:days+" j",bg:"#450a0a",fg:"#fca5a5",bd:"#b91c1c"};
+}
+
+var ICON={
+  pencil:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  trash:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+  plus:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  cal:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  alert:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
+  dash:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+  chev:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+};
+
+function allTasks(){
+  var out=[];
+  SITES.forEach(function(s){ (state.tasks[s.id]||[]).forEach(function(t){ out.push({t:t,s:s}); }); });
+  return out;
+}
+function urgency(t,now){ var over=t.due&&now>t.due; return (over?1e9+dayDiff(t.due,now)*1000:0)+dayDiff(t.createdAt,now); }
+
+function render(){
+  var now=Date.now();
+  var app=document.getElementById("app");
+  var html="";
+
+  // Onglets
+  html+='<div class="tabs">';
+  html+='<button class="tab '+(state.tab==="dashboard"?"active":"")+'" data-tab="dashboard">'+ICON.dash+'Dashboard</button>';
+  SITES.forEach(function(s){
+    var n=(state.tasks[s.id]||[]).length;
+    html+='<button class="tab '+(state.tab===s.id?"active":"")+'" data-tab="'+s.id+'" data-rename="'+s.id+'">'
+      +'<span class="dot" style="background:'+s.dot+'"></span>'+esc(siteName(s))
+      +(n>0?'<span class="count">'+n+'</span>':'')+'</button>';
+  });
+  html+='</div>';
+
+  if(state.tab==="dashboard"){
+    html+=renderDashboard(now);
+  }else{
+    html+=renderSite(state.tab,now);
+  }
+  app.innerHTML=html;
+  wire();
+}
+
+function renderDashboard(now){
+  var items=allTasks();
+  var total=items.length;
+  var overdue=items.filter(function(o){return o.t.due&&now>o.t.due;}).length;
+  var oldest=items.reduce(function(m,o){return Math.max(m,dayDiff(o.t.createdAt,now));},0);
+  var h="";
+  h+='<div class="grid3">';
+  h+='<div class="stat"><div class="num">'+total+'</div><div class="lbl">À faire</div></div>';
+  h+='<div class="stat"><div class="num '+(overdue?"red":"")+'">'+overdue+'</div><div class="lbl">En retard</div></div>';
+  h+='<div class="stat"><div class="num '+(oldest>=7?"red":"")+'">'+oldest+' <span style="font-size:16px">j</span></div><div class="lbl">Plus ancienne</div></div>';
+  h+='</div>';
+
+  h+='<div class="sec">Par site</div>';
+  SITES.forEach(function(s){
+    var list=state.tasks[s.id]||[];
+    var od=list.filter(function(t){return t.due&&now>t.due;}).length;
+    var ol=list.reduce(function(m,t){return Math.max(m,dayDiff(t.createdAt,now));},0);
+    h+='<button class="row" data-goto="'+s.id+'" style="margin-bottom:8px">'
+      +'<span class="dot" style="width:12px;height:12px;background:'+s.dot+'"></span>'
+      +'<span class="name">'+esc(siteName(s))+'</span>'
+      +(od>0?'<span class="pill late">'+ICON.alert+od+'</span>':'')
+      +(list.length&&ol>=1?'<span style="font-size:12px;color:var(--muted)">'+ol+' j</span>':'')
+      +'<span class="count" style="min-width:24px;height:24px;'+(list.length?'':'background:#1e293b;color:#64748b')+'">'+list.length+'</span>'
+      +'<span style="color:#475569">'+ICON.chev+'</span></button>';
+  });
+
+  h+='<div class="sec">À traiter en priorité</div>';
+  var pr=items.slice().sort(function(a,b){return urgency(b.t,now)-urgency(a.t,now);});
+  if(pr.length===0){
+    h+='<div class="empty card">'+ICON.check+'<div style="margin-top:8px">Tout est à jour.</div></div>';
+  }else{
+    pr.forEach(function(o){
+      var t=o.t,s=o.s;var age=dayDiff(t.createdAt,now);var ai=ageInfo(age);var over=t.due&&now>t.due;
+      h+='<button class="row prow '+(over?"late":"")+'" data-goto="'+s.id+'" style="margin-bottom:8px">'
+        +'<span class="dot" style="margin-top:6px;background:'+s.dot+'"></span>'
+        +'<div style="flex:1;min-width:0">'
+          +'<p class="clamp" style="margin:0;font-size:15px;color:#e2e8f0">'+esc(t.text)+'</p>'
+          +'<div class="meta" style="margin-top:6px"><span style="font-size:12px;color:var(--muted);font-weight:500">'+esc(siteName(s))+'</span>'
+          +(over?'<span class="pill late">'+ICON.alert+'En retard de '+dayDiff(t.due,now)+' j</span>'
+                :'<span class="pill" style="background:'+ai.bg+';color:'+ai.fg+';border-color:'+ai.bd+'">'+ai.label+'</span>')
+        +'</div></div></button>';
+    });
+  }
+  return h;
+}
+
+function renderSite(id,now){
+  var s=SITES.filter(function(x){return x.id===id;})[0];
+  var list=(state.tasks[id]||[]).slice().sort(function(a,b){return a.createdAt-b.createdAt;});
+  var h="";
+  // Ajout
+  h+='<div class="card add">'
+    +'<span class="dot" style="margin-top:14px;background:'+s.dot+'"></span>'
+    +'<div style="flex:1">'
+      +'<textarea id="newText" class="ta" rows="1" placeholder="À faire à « '+esc(siteName(s))+' »…"></textarea>'
+      +'<div class="duewrap">'+ICON.cal+'<span>Échéance</span><input type="date" id="newDue"></div>'
+    +'</div>'
+    +'<button class="btn" id="addBtn">'+ICON.plus+'Ajouter</button>'
+  +'</div>';
+
+  h+='<div class="list">';
+  if(list.length===0){
+    h+='<div class="empty">'+ICON.check+'<div style="margin-top:8px">Rien en attente sur ce site.</div></div>';
+  }
+  list.forEach(function(t){
+    var age=dayDiff(t.createdAt,now);var ai=ageInfo(age);var over=t.due&&now>t.due;
+    if(state.editingId===t.id){
+      h+='<div class="card" style="border-color:'+(over?'#dc2626':'var(--border)')+'">'
+        +'<textarea id="editText" class="edit-ta" rows="2">'+esc(t.text)+'</textarea>'
+        +'<div class="edit-bar">'
+          +'<span class="duewrap">'+ICON.cal+'<input type="date" id="editDue" value="'+(t.due?new Date(t.due).toISOString().slice(0,10):"")+'"></span>'
+          +'<div style="display:flex;gap:6px">'
+            +'<button class="iconbtn" data-cancel="1">'+ICON.x+'</button>'
+            +'<button class="save" data-save="'+t.id+'">'+ICON.check+'Enregistrer</button>'
+          +'</div>'
+        +'</div></div>';
+    }else{
+      var dueHtml="";
+      if(t.due){
+        dueHtml=over?'<span class="pill late">'+ICON.alert+'En retard de '+dayDiff(t.due,now)+' j</span>'
+                    :'<span class="pill due">'+ICON.cal+'Pour le '+fmt(t.due)+'</span>';
+      }
+      h+='<div class="card" style="border-color:'+(over?'#dc2626':'var(--border)')+'">'
+        +'<div class="task">'
+          +'<div style="flex:1;min-width:0">'
+            +'<p>'+esc(t.text)+'</p>'
+            +'<div class="meta">'
+              +'<span class="pill muted">'+ICON.clock+fmt(t.createdAt)+'</span>'
+              +'<span class="pill" style="background:'+ai.bg+';color:'+ai.fg+';border-color:'+ai.bd+'">'+ai.label+'</span>'
+              +dueHtml
+            +'</div>'
+          +'</div>'
+          +'<div style="display:flex;gap:2px;flex:0 0 auto">'
+            +'<button class="iconbtn" data-edit="'+t.id+'">'+ICON.pencil+'</button>'
+            +'<button class="iconbtn del" data-del="'+t.id+'">'+ICON.trash+'</button>'
+          +'</div>'
+        +'</div></div>';
+    }
+  });
+  h+='</div>';
+  return h;
+}
+
+function addTask(){
+  var ta=document.getElementById("newText");var de=document.getElementById("newDue");
+  var text=(ta.value||"").trim(); if(!text) return;
+  var due=de.value?new Date(de.value+"T00:00:00").getTime():null;
+  state.tasks[state.tab].push({id:"t"+Date.now(),text:text,createdAt:Date.now(),due:due});
+  save(); render();
+}
+function delTask(id){
+  state.tasks[state.tab]=state.tasks[state.tab].filter(function(t){return t.id!==id;});
+  save(); render();
+}
+function saveEdit(id){
+  var text=(document.getElementById("editText").value||"").trim(); if(!text) return;
+  var dv=document.getElementById("editDue").value;
+  var due=dv?new Date(dv+"T00:00:00").getTime():null;
+  state.tasks[state.tab]=state.tasks[state.tab].map(function(t){return t.id===id?{id:t.id,text:text,createdAt:t.createdAt,due:due}:t;});
+  state.editingId=null; save(); render();
+}
+
+function wire(){
+  document.querySelectorAll("[data-tab]").forEach(function(b){
+    b.addEventListener("click",function(){state.editingId=null;state.tab=b.getAttribute("data-tab");render();});
+  });
+  document.querySelectorAll("[data-rename]").forEach(function(b){
+    b.addEventListener("dblclick",function(e){
+      e.preventDefault();
+      var id=b.getAttribute("data-rename");var s=SITES.filter(function(x){return x.id===id;})[0];
+      var v=prompt("Nom du site :",siteName(s)); if(v&&v.trim()){state.names[id]=v.trim();save();render();}
+    });
+  });
+  document.querySelectorAll("[data-goto]").forEach(function(b){
+    b.addEventListener("click",function(){state.tab=b.getAttribute("data-goto");render();});
+  });
+  var add=document.getElementById("addBtn"); if(add) add.addEventListener("click",addTask);
+  var nt=document.getElementById("newText");
+  if(nt){
+    nt.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addTask();} });
+  }
+  document.querySelectorAll("[data-del]").forEach(function(b){b.addEventListener("click",function(){delTask(b.getAttribute("data-del"));});});
+  document.querySelectorAll("[data-edit]").forEach(function(b){b.addEventListener("click",function(){state.editingId=b.getAttribute("data-edit");render();});});
+  document.querySelectorAll("[data-save]").forEach(function(b){b.addEventListener("click",function(){saveEdit(b.getAttribute("data-save"));});});
+  document.querySelectorAll("[data-cancel]").forEach(function(b){b.addEventListener("click",function(){state.editingId=null;render();});});
+}
+
+load(); render();
+</script>
+</body>
+</html>
