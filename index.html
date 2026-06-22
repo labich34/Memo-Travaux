@@ -73,6 +73,10 @@
   .foot{text-align:center;font-size:12px;color:var(--muted2);margin-top:28px}
   .edit-ta{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:15px}
   .edit-bar{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .cbx{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid var(--border2);background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#020617}
+  .cbx.on{background:var(--amber);border-color:var(--amber)}
+  .btn.sec{background:var(--card2);color:#e2e8f0;width:100%;justify-content:center;margin-top:14px}
+  .btn.sec:active{background:var(--border2)}
   .save{background:var(--amber);color:#020617;font-weight:700;font-size:14px;border:0;border-radius:8px;padding:8px 12px;display:inline-flex;gap:5px;align-items:center;cursor:pointer}
   svg{display:block}
 </style>
@@ -100,17 +104,17 @@ var SITES=[
 ];
 var DAY=86400000;
 
-var state={tab:"dashboard",tasks:{},names:{},editingId:null};
+var state={tab:"dashboard",tasks:{},names:{},editingId:null,shopping:[]};
 
 function load(){
   try{
     var raw=localStorage.getItem(KEY);
-    if(raw){var d=JSON.parse(raw);state.tasks=d.tasks||{};state.names=d.names||{};}
+    if(raw){var d=JSON.parse(raw);state.tasks=d.tasks||{};state.names=d.names||{};state.shopping=d.shopping||[];}
   }catch(e){}
   SITES.forEach(function(s){ if(!state.tasks[s.id]) state.tasks[s.id]=[]; });
 }
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({tasks:state.tasks,names:state.names})); }catch(e){}
+  try{ localStorage.setItem(KEY,JSON.stringify({tasks:state.tasks,names:state.names,shopping:state.shopping})); }catch(e){}
 }
 function siteName(s){ return state.names[s.id]||s.name; }
 function dayDiff(a,b){ return Math.floor((b-a)/DAY); }
@@ -168,7 +172,8 @@ var ICON={
   alert:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
   dash:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
   chev:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
-  bell:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>'
+  bell:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  cart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.5 2.5h2l2.6 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6.5H6"/></svg>'
 };
 
 function allTasks(){
@@ -186,6 +191,8 @@ function render(){
   // Onglets
   html+='<div class="tabs">';
   html+='<button class="tab '+(state.tab==="dashboard"?"active":"")+'" data-tab="dashboard">'+ICON.dash+'Dashboard</button>';
+  var shopTodo=(state.shopping||[]).filter(function(i){return !i.done;}).length;
+  html+='<button class="tab '+(state.tab==="shop"?"active":"")+'" data-tab="shop">'+ICON.cart+'Matériaux'+(shopTodo>0?'<span class="count">'+shopTodo+'</span>':'')+'</button>';
   SITES.forEach(function(s){
     var n=(state.tasks[s.id]||[]).length;
     html+='<button class="tab '+(state.tab===s.id?"active":"")+'" data-tab="'+s.id+'" data-rename="'+s.id+'">'
@@ -196,6 +203,8 @@ function render(){
 
   if(state.tab==="dashboard"){
     html+=renderDashboard(now);
+  }else if(state.tab==="shop"){
+    html+=renderShop();
   }else{
     html+=renderSite(state.tab,now);
   }
@@ -307,6 +316,57 @@ function renderSite(id,now){
   return h;
 }
 
+function renderShop(){
+  var items=state.shopping||[];
+  var todo=items.filter(function(i){return !i.done;});
+  var done=items.filter(function(i){return i.done;});
+  var h="";
+  h+='<div class="card add">'
+    +'<span class="dot" style="margin-top:14px;background:#a3e635"></span>'
+    +'<div style="flex:1"><textarea id="shopText" class="ta" rows="1" placeholder="Article à acheter…"></textarea></div>'
+    +'<button class="btn" id="shopAdd">'+ICON.plus+'Ajouter</button>'
+  +'</div>';
+
+  h+='<div class="list">';
+  if(items.length===0){
+    h+='<div class="empty">'+ICON.cart+'<div style="margin-top:8px">Liste vide. Ajoute ce qu\'il te faut au magasin.</div></div>';
+  }
+  todo.concat(done).forEach(function(i){
+    var on=i.done?" on":"";
+    var st=i.done?"color:var(--muted2);text-decoration:line-through":"color:#e2e8f0";
+    h+='<div class="card" style="padding:10px 12px">'
+      +'<div class="task" style="align-items:center">'
+        +'<button class="cbx'+on+'" data-toggle="'+i.id+'">'+(i.done?ICON.check:'')+'</button>'
+        +'<p style="flex:1;min-width:0;margin:0;font-size:15px;'+st+'">'+esc(i.text)+'</p>'
+        +'<button class="iconbtn del" data-delshop="'+i.id+'">'+ICON.trash+'</button>'
+      +'</div></div>';
+  });
+  h+='</div>';
+  if(done.length){
+    h+='<button class="btn sec" id="clearBought">'+ICON.trash+'Retirer les '+done.length+' article'+(done.length>1?'s':'')+' acheté'+(done.length>1?'s':'')+'</button>';
+  }
+  return h;
+}
+
+function addShop(){
+  var ta=document.getElementById("shopText");
+  var text=(ta.value||"").trim(); if(!text) return;
+  state.shopping.push({id:"m"+Date.now(),text:text,done:false});
+  save(); render();
+}
+function toggleShop(id){
+  state.shopping=state.shopping.map(function(i){return i.id===id?{id:i.id,text:i.text,done:!i.done}:i;});
+  save(); render();
+}
+function delShop(id){
+  state.shopping=state.shopping.filter(function(i){return i.id!==id;});
+  save(); render();
+}
+function clearBought(){
+  state.shopping=state.shopping.filter(function(i){return !i.done;});
+  save(); render();
+}
+
 function addTask(){
   var ta=document.getElementById("newText");var de=document.getElementById("newDue");
   var text=(ta.value||"").trim(); if(!text) return;
@@ -341,6 +401,12 @@ function wire(){
     b.addEventListener("click",function(){state.tab=b.getAttribute("data-goto");render();});
   });
   var add=document.getElementById("addBtn"); if(add) add.addEventListener("click",addTask);
+  var sadd=document.getElementById("shopAdd"); if(sadd) sadd.addEventListener("click",addShop);
+  var stext=document.getElementById("shopText");
+  if(stext){ stext.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addShop();} }); }
+  document.querySelectorAll("[data-toggle]").forEach(function(b){b.addEventListener("click",function(){toggleShop(b.getAttribute("data-toggle"));});});
+  document.querySelectorAll("[data-delshop]").forEach(function(b){b.addEventListener("click",function(){delShop(b.getAttribute("data-delshop"));});});
+  var cb=document.getElementById("clearBought"); if(cb) cb.addEventListener("click",clearBought);
   var nt=document.getElementById("newText");
   if(nt){
     nt.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addTask();} });
